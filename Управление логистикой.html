@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Управление логистикой — Olive</title>
+<style>
+  :root {
+    --green:#16a34a; --blue:#2563eb; --orange:#d97706; --red:#dc2626;
+    --bg:#f8fafc; --card:#fff; --border:#e2e8f0; --text:#1e293b; --muted:#64748b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text)}
+
+  /* HEADER */
+  .header{background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;padding:18px 32px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+  .header h1{font-size:21px;font-weight:700}
+  .header-meta{font-size:12px;opacity:.85;text-align:right;line-height:1.6}
+  .logo{font-size:26px;font-weight:900;margin-bottom:2px}
+
+  /* STATS */
+  .stats-bar{background:#fff;border-bottom:1px solid var(--border);padding:10px 32px;display:flex;gap:28px;flex-wrap:wrap}
+  .stat{display:flex;flex-direction:column}
+  .stat-val{font-size:20px;font-weight:700;color:var(--green)}
+  .stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+
+  /* TABS */
+  .tabs{background:#fff;border-bottom:2px solid var(--border);padding:0 32px;display:flex;position:sticky;top:0;z-index:100;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow-x:auto}
+  .tab{padding:13px 18px;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s;white-space:nowrap}
+  .tab:hover{color:var(--green)}
+  .tab.active{color:var(--green);border-bottom-color:var(--green)}
+
+  /* CONTENT */
+  .content{padding:22px 32px}
+  .section{display:none}.section.active{display:block}
+  .section-desc{color:var(--muted);font-size:13px;margin-bottom:14px}
+
+  /* CARD */
+  .card{background:var(--card);border-radius:10px;border:1px solid var(--border);overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+  .card-header{padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:#f8fafc}
+  .card-title{font-size:15px;font-weight:700}
+  .card-count{font-size:12px;color:var(--muted);background:var(--border);padding:2px 8px;border-radius:12px}
+
+  /* TABLE */
+  table{width:100%;border-collapse:collapse}
+  th{background:#f1f5f9;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);padding:9px 11px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+  td{padding:9px 11px;border-bottom:1px solid #f1f5f9;font-size:13px;vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#f8fafc}
+  .num{color:var(--muted);font-size:12px;width:30px;text-align:center}
+  .price{font-weight:700;color:var(--green);white-space:nowrap}
+  small{color:var(--muted);font-size:11px}
+  .total-row td{font-weight:700;background:#f1f5f9;border-top:2px solid var(--border)}
+
+  /* BADGES */
+  .badge{display:inline-block;padding:2px 8px;border-radius:12px;color:#fff;font-size:11px;font-weight:600;white-space:nowrap}
+
+  /* MEALS in table */
+  .meals-col{min-width:260px}
+  .date-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin:5px 0 2px}
+  .dish-row{display:flex;align-items:baseline;gap:5px;padding:2px 0;font-size:12px}
+  .dish-name{flex:1}
+  .no-data{color:var(--muted);font-style:italic;font-size:12px}
+
+  /* MEAL TYPE PILLS */
+  .mtp{display:inline-block;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:700;white-space:nowrap;flex-shrink:0}
+  .mtp.завтрак{background:#fef3c7;color:#92400e}
+  .mtp.обед{background:#dcfce7;color:#166534}
+  .mtp.ужин{background:#ede9fe;color:#5b21b6}
+  .mtp.перекус{background:#fee2e2;color:#991b1b}
+
+  /* ROUTE */
+  .delivery-check{width:18px;height:18px;cursor:pointer;accent-color:var(--green)}
+  .note-input{border:1px solid var(--border);border-radius:6px;padding:3px 7px;font-size:12px;width:140px;color:var(--text)}
+
+  /* STICKERS */
+  .stickers-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;padding:16px}
+  .sticker{border:2px solid var(--border);border-radius:10px;padding:12px;background:#fff;break-inside:avoid}
+  .s-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+  .s-name{font-size:15px;font-weight:700}
+  .s-kcal{font-size:11px;color:#fff;background:var(--green);padding:2px 7px;border-radius:10px;white-space:nowrap}
+  .s-addr{font-size:11px;color:var(--muted);margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+  .s-meals{margin-bottom:8px}
+  .s-date{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin:6px 0 3px}
+  .s-dish{display:flex;align-items:baseline;gap:5px;font-size:12px;padding:2px 0}
+  .s-mtp{display:inline-block;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:700;white-space:nowrap;flex-shrink:0}
+  .s-mtp.завтрак{background:#fef3c7;color:#92400e}
+  .s-mtp.обед{background:#dcfce7;color:#166534}
+  .s-mtp.ужин{background:#ede9fe;color:#5b21b6}
+  .s-mtp.перекус{background:#fee2e2;color:#991b1b}
+  .s-no-meals{font-size:12px;color:var(--muted);font-style:italic}
+  .s-footer{padding-top:8px;border-top:1px solid var(--border)}
+
+  @media print{
+    .tabs,.stats-bar{display:none}
+    .section{display:block!important;page-break-after:always}
+    .header{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="logo">🫒 Olive</div>
+    <h1>Управление логистикой</h1>
+  </div>
+  <div class="header-meta">
+    15.05.2026<br>
+    Клиентов: 31<br>
+    Сумма: 3,667,395 ₸
+  </div>
+</div>
+
+<div class="stats-bar">
+  <div class="stat"><span class="stat-val">31</span><span class="stat-label">Всего</span></div>
+  <div class="stat"><span class="stat-val" style="color:#16a34a">3</span><span class="stat-label">Актив Блюда</span></div>
+  <div class="stat"><span class="stat-val" style="color:#2563eb">15</span><span class="stat-label">Актив</span></div>
+  <div class="stat"><span class="stat-val" style="color:#d97706">2</span><span class="stat-label">Актив &lt;5 дней</span></div>
+  <div class="stat"><span class="stat-val" style="color:#dc2626">11</span><span class="stat-label">5 дней до конца</span></div>
+  <div class="stat"><span class="stat-val">3,667,395 ₸</span><span class="stat-label">Сумма</span></div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('zayavka',this)">📋 Заявочный лист</div>
+  <div class="tab" onclick="showTab('komplek',this)">📦 Лист комплектовки</div>
+  <div class="tab" onclick="showTab('marshrut',this)">🚗 Маршрутный лист</div>
+  <div class="tab" onclick="showTab('realizaciya',this)">💰 Список реализации</div>
+  <div class="tab" onclick="showTab('nakleyki',this)">🏷️ Список наклеек</div>
+</div>
+
+<div class="content">
+
+  <!-- ── ЗАЯВОЧНЫЙ ЛИСТ ── -->
+  <div id="zayavka" class="section active">
+    <p class="section-desc">Сводный список активных клиентов с адресами и блюдами.</p>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Заявочный лист</span>
+        <span class="card-count">31 клиентов</span>
+      </div>
+      <table>
+        <thead><tr>
+          <th>#</th><th>Клиент</th><th>Стадия</th><th>Калории</th><th>Адрес доставки</th><th>Блюда</th>
+        </tr></thead>
+        <tbody>
+    <tr>
+      <td class="num">1</td>
+      <td><strong>Рустам Олив</strong><br><small>Рустам Олив 9947/1200ккал Продление</small></td>
+      <td><span class="badge" style="background:#16a34a">Актив Блюда</span></td>
+      <td>1200 ккал</td>
+      <td>Навои 37, блок 10, 3 этаж, кв 332<br><small>Дом.: 332</small></td>
+      <td class="meals-col"><div class="date-label">17 мая</div><div class="dish-row"><span class="mtp завтрак">Завтрак</span><span class="dish-name">00376 Каша овсяная с фруктами</span></div><div class="dish-row"><span class="mtp обед">Обед</span><span class="dish-name">00478 Куриная грудка с чечевицей</span></div><div class="dish-row"><span class="mtp обед">Обед</span><span class="dish-name">46945 Паста с креветками</span></div><div class="dish-row"><span class="mtp ужин">Ужин</span><span class="dish-name">19230 Лапша соба с курицей</span></div></td>
+    </tr>
+    <tr>
+      <td class="num">2</td>
+      <td><strong>Перизат Олив</strong><br><small>Перизат Олив 1444/1800ккал</small></td>
+      <td><span class="badge" style="background:#16a34a">Актив Блюда</span></td>
+      <td>1800 ккал</td>
+      <td>Назарбаева 28а, 19, кв. 32, домофон: 32<br><small>Дом.: 32</small></td>
+      <td class="meals-col"><div class="date-label">17 мая</div><div class="dish-row"><span class="mtp завтрак">Завтрак</span><span class="dish-name">31095 Фит панкейки из кабачка с соусом дзадзики</span></div><div class="dish-row"><span class="mtp завтрак">Завтрак</span><span class="dish-name">00405 Кесадилья с яичным паштетом</span></div><div class="dish-row"><span class="mtp обед">Обед</span><span class="dish-name">19253 Харчо с насыщенным пряным бульоном</span></div><div class="dish-row"><span class="mtp обед">Обед</span><span class="dish-name">46945 Паста с креветками</span></div><div class="dish-row"><span class="mtp ужин">Ужин</span><span class="dish-name">00378 Куриное бедро с рагу из овощей</span></div></td>
+    </tr>
+    <tr>
+      <td class="num">3</td>
+      <td><strong>Андрей</strong><br><small>Андрей 0705/1800ккал Продление</small></td>
+      <td><span class="badge" style="background:#16a34a">Актив Блюда</span></td>
+      <td>1800 ккал</td>
+      <td>Коктем-3, дом 24, кв.140|0;0|3305<br><small>Дом.: 140</small></td>
+      <td class="meals-col"><div class="date-label">15 мая</div><div class="dish-row"><span class="mtp завтрак">Завтрак</span><span class="dish-name">Скрембл с индейкой</span></div><div class="dish-row"><span class="mtp обед">Обед</span><span class="dish-name">Ростбиф с грибами</span></div><div class="dish-row"><span class="mtp обед">Обед</span><span class="dish-name">Нежная семга с овощами гриль</span></div><div class="dish-row"><span class="mtp ужин">Ужин</span><span class="dish-name">Поке с лососем</span></div></td>
+    </tr>
+    <tr>
+      <td class="num">4</td>
+      <td><strong>Кодар Айман</strong><br><small>Кодар Айман(0524/Навои) 1800ккал Новый</small></td>
+      <td><span class="badge" style="background:#2563eb">Актив</span></td>
+      <td>1800 ккал</td>
+      <td>Навои 70, квартира 1, этаж 2<br><small>Дом.: 1</small></td>
+      <td class="meals-col"><span class="no-data">—</span></td>
+    </tr>
+    <tr>
+      <td class="num">5</td>
+      <td><strong>Анна</strong><br><small>Анна 6147 1200 ккал Новый</small></td>
+      <td><span class="badge" style="background:#2563eb">Актив</span></td>
+      <td>1200 ккал</td>
+      <td>Айтеке би, 123/1-23, 7 этаж<br><small>Дом.: 23</small></td>
+      <td class="meals-col"><span class="no-data">—</span></td>
+    </tr>
+    <tr>
+      <td class="num">6</td>
+      <td><strong>Жанибек</strong><br><small>Жанибек (3496/Абирова) - 1800ккал Продление</small></td>
+      <td><span class="badge" style="background:#2563eb">Актив</span></td>
+      <td>1800 ккал</td>
+      <td>Абирова, 10<br><small>Дом.: —</small></td>
+      <td class="meals-col"><span class="no-data">—</span></td>
+    </tr>
+    <tr>
+      <td class="num">7</td>
+      <td><strong>Зарема</strong><br><small>Зарема 5454(Бот. Сад) - 1500ккал Продление </small></td>
+      <td><span class="badge" style="background:#2563eb">Актив</span></td>
+      <td>1500 ккал</td>
+      <td>Жк Ботанический Сад д.9 |0;0|3139<br><small>Дом.: 6</small></td>
+      <td class="meals-col"><span class="no-data">—</span></td>
+    </tr>
+    <tr>
+      <td class="num">8</td>
+      <td><strong>Оксана</strong><br><small>Оксана 7788/1200ккал Продление</small></td>
+      <td><span class="badge" style="background:#2563eb">Актив</span></td>
+      <td>1200 ккал</td>
+      <td>Ул. Казыбек би 183, подъезд 4, этаж 3, Кв 44<br><small>Дом.: —</small></td>
+      <td class="meals-col"><span class="no-data">—</span></td>
+    </tr>
+    <tr>
+      <td class="num">9</td>
+      <td><strong>Карина UGC</strong><br><small>Карина UGC блогер/1500ккал</small></td>
+      <td><span class="badge" style="background:#2563eb">Актив</span></td>
+      <td>1500 ккал</td>
+      <td>Жарокова 39, кв 88 5 подьезд, 5 этаж<br><small>Дом.: 88</small></td>
+      <td class="meals-col"><span class="no-data">—</span></td>
+    </tr>
+    <tr>
+      <td class="num">10</td>
+      <td><strong>Антон</strong><br><small>Антон 0780 - 1800 ккал продление </small></td>
+      <td><span class="badge" style="background:#2563eb">Актив</span></td>
+      <td>1800 ккал</td>
+      <td>Санаторная 22 ЖК Байсал 5й этаж|0;0|3153<br><small>Дом.: 14</small></td>
+      <td class="meals-col"><span class="no-data">—</span></td>
+    </tr>
+    <tr>
+      <td class="num">11</td>
+      <td><strong>Куанышбек</strong><br><small>Куанышбек 4907 2500 ккал Продление</small></td>
+      <td><span class="badge" style="background:#2563eb">Актив</span></td>
+      <td>2500 ккал</td>
+      <td>Проспект Абая, 109/11, корпус 18. квартира 26 (8 этаж)|0;0|3201<br><small>Дом.: 26</small></td>
+      <td class="meals-col"><span class="no-data">—</span></td>
+    </tr>
+    <tr>
+      <td class="num">12</td>
+      <td><strong>Малика</strong><br><small>Малика 5672 1200 ккал Новый</small></td>
+      <td><span class="badge" style="background:#2563eb">Актив</span></td>
+      <td>1200 ккал</td>
+      <td>Альфараби 41/6, блок 5, квартира 140<br><small>Дом.: 140</small></td>
+      <td class="meals-col"><span class="no-data">—</span></td>
+    </tr>
+    <tr>
+      <td class="num">13</td>
+      <td><strong>Анастасия</strong><br><small>Анастасия 7676 1800ккал Продление</small></td>
+      <td><span class="badge" style="background:#2563eb">Актив</span></td>
+      <td>1800 ккал</td>
+      <td>Жилой комплекс Ботанический сад дом 6 квартира 5, Алматы, Казахстан|0;0|3215<br><small>Дом.: 5</small></td>
+      <td class="meals-col"><span class="no-data">—</span></td>
+    </tr>
+    <tr>
+      <td class="num">14</td>
+      <td><strong>Виктор</strong><br><small>Виктор 3404 1800 ккал Новый</small></td>
+      <td><span class="badge" style="background:#2563eb">Актив</span></td>
+      <td>1800 ккал</td>
+      <td>улица Бальзака, 8 лит В, 2 этаж, квартира 198<br><small>Дом.: 198</small></td>
+      <td class="meals-col"><span class="no-data">—</span></td>
+    </tr>
+    <tr>
+      <td class="num">15</td>
+      <td><strong>Искандер</strong><br><small>Искандер 0011 1800 ккал Продление</small></td>
+      <td><span class="badge" style="background:#2563eb">Актив</span></td>
+      <td>1800 ккал</td>
+      <td>ЖК Легенда, Абая 109/8, Корпус 12, Квартира 46, 8 этаж|0;0|3273<br><small>Дом.: 46</small></td>
+      <td class="meals-col"><span class="no-data">—</span></td>
+    </tr>
+    <tr>
+      <td class="num">16</td>
+      <td><strong>Сабира</strong><br><small>Сабира 8975/1500ккал Продление</small></td>
+      <td><span class="badge" style="background:#2563eb">Актив</span></td>
+      <td>1500 ккал</td>
+      <td>ул Ауэзова 8, кв 72, 7 подъезд, 3 этаж|0;0|3183<br><small>Дом.: 72</small></td>
+      <td class="meals-col"><span class="no-data">—</span></td>
+    </tr>
+    <tr>
+      <td class="num">17</td>
+      <td><strong>Елена</strong><br><small>Елена 7770/1500ккал Продление</small></td>
+      <td><span class="badge" style="background:#2563eb">Актив</span></td>
+      <td>1500 ккал</td>
+      <td>Аль Фараби 38, офис, оставлять на ресепшен|0;0|3265<br><small>Дом.: Офис</small></td>
+      <td class="meals-col"><span class="no-data">—</span></td>
+    </tr>
+    <tr>
+      <td class="num">18</td>
+      <td><strong>Карина К</strong><br><small>Карина К. 0514/1500ккал Новый</small></td>
+      <td><span class="badge" style="background:#2563eb">Актив</span></td>
+      <td>1500 ккал</td>
+      <td>Микрорайон Алмагуль, дом 19, квартира 26, подъезд 2, этаж 2<br><small>Дом.: 26</small></td>
+      <td class="meals-col"><span class="no-data">—</span></td>
+    </tr>
+    <tr>
+      <td class="num">19</td>
+      <td><strong>Рабига</strong><br><small>Рабига 0862/1200ккал По промокоду</small></td>
+      <td><span class="badge" style="background:#d97706">Актив <5 дней</span></td>
+      <td>1200 ккал</td>
+      <td>Баганашыл, улица Тан, дом 154 частный дом, необходимо позвонить, чтобы вышли встретить<br><small>Дом.: Частный дом</small></td>
+      <td class="meals-col"><span class="no-data">—</span></td>
+    </tr>
+    <tr>
+      <td class="num">20</td>
+      <td><strong>Токгоз</strong><br><small>Токгоз 5000/2500ккал Студия Ya</small></td>
+      <td><span class="badge" style="background:#d97706">Актив <5 дней</span></td>
+      <td>2500 ккал</td>
+      <td>Тимирязева 32а, кВ 66<br><small>Дом.: 66</small></td>
+      <td class="meals-col"><span class="no-data">—</span></td>
+    </tr>
+    <tr>
+      <td class="num">21</td>
+      <td><strong>Татьяна</strong><br><small>Татьяна 3283(от Карины Б) - 1200ккал Новый</small></td>
+      <td><span class="badge" style="background:#dc2626">5 дней до конца</span></td>
+      <td>1200 ккал</td>
+      <td>Ади Шарипова 145, корпус 3, 9 этаж, Алматы, Казахстан|0;0|2667<br><small>Дом.: 354</small></td>
+      <td class="meals-col"><span class="no-data">—</span></td>
+    </tr>
+    <tr>
+      <td class="num">22</td>
+      <td><strong>Дмитрий</strong><br><small>Дмитрий(Абая) 1500ккал Продление</small></td>
+      <td><span class="badge" style="background:#dc2626">5 дней до конца</span></td>
+      <td>1500 ккал</td>
+      <td>Абая 130/3, 10 этаж<br><small>Дом.: 32</small></td>
+      <td class="meals-col"><span class="no-data">—</span></td>
+    </tr>
+    <tr>
+      <td class="num">23</td>
+      <td><strong>Бейсембиева Алтынай</strong><br><small>Бейсембиева Алтынай(5252/Жамакаева) - 1500ккал Продлени</small></td>
+      <td><span class="badge" style="background:#dc2626">5 дней до конца</span></td>
+      <td>1500 ккал</td>
+      <td>жамакаева 22/2<br><small>Дом.: —</small></td>
+      <td class="meals-col"><span class="no-data">—</span></td>
+    </tr>
+    <tr>
+      <td class="num">24</td>
+      <td><strong>Константин</strong><br><small>Константин 1803/Нурлытау 1500 Новый</small></td>
+      <td><span class="badge" style="background:#dc2626">5 дней до конца</span></td>
+      <td> ккал</td>
+      <td>Микрорайон Нурлытау , улица Макана Жумагулова , дом 46<br><small>Дом.: 46</small></td>
+      <td class="meals-col"><span class="no-data">—</span></td>
+    </tr>
+    <tr>
+      <td class="num">25</td>
+      <td><strong>Айнур</strong><br><small>Айнур 4251/1200ккал Продление</small></td>
+      <td><span class="badge" style="background:#dc2626">5 дней до конца</span></td>
+      <td>1200 ккал</td>
+      <td>пр. Аль-фараби, 21/3, Блок, 3, кв. 223, эьаж 9, домофон на входе 3#223, домофон в подъезде - 223<br><small>Дом.: домофон на входе 3#223, домофон в подъезде - 223</small></td>
+      <td class="meals-col"><span class="no-data">—</span></td>
+    </tr>
+    <tr>
+      <td class="num">26</td>
+      <td><strong>Ольга</strong><br><small>Ольга 8866 1200 ккал Новый</small></td>
+      <td><span class="badge" style="background:#dc2626">5 дней до конца</span></td>
+      <td>1200 ккал</td>
+      <td>Достык 36 кв 41. Подъезд 3, этаж 3<br><small>Дом.: 41</small></td>
+      <td class="meals-col"><span class="no-data">—</span></td>
+    </tr>
+    <tr>
+      <td class="num">27</td>
+      <td><strong>Нурия Т</strong><br><small>Нурия Т.(Мауленова) 1200ккал продление 1</small></td>
+      <td><span class="badge" style="background:#dc2626">5 дней до конца</span></td>
+      <td>1200 ккал</td>
+      <td>, Мауленова д 124 кв 45 подъезд 3 этаж 4, Алматы, Казахстан (0, 0)|0;0|2747<br><small>Дом.: 45</small></td>
+      <td class="meals-col"><span class="no-data">—</span></td>
+    </tr>
+    <tr>
+      <td class="num">28</td>
+      <td><strong>Нурия Т</strong><br><small>Нурия Т.(Мауленова) 1200ккал Продление 2</small></td>
+      <td><span class="badge" style="background:#dc2626">5 дней до конца</span></td>
+      <td>1200 ккал</td>
+      <td>, Мауленова д 124 кв 45 подъезд 3 этаж 4, Алматы, Казахстан (0, 0)|0;0|2749<br><small>Дом.: 45</small></td>
+      <td class="meals-col"><span class="no-data">—</span></td>
+    </tr>
+    <tr>
+      <td class="num">29</td>
+      <td><strong>Ирина</strong><br><small>Ирина 2828 1500 ккал Новый</small></td>
+      <td><span class="badge" style="background:#dc2626">5 дней до конца</span></td>
+      <td>1500 ккал</td>
+      <td>Восточная улица, 15<br><small>Дом.: —</small></td>
+      <td class="meals-col"><span class="no-data">—</span></td>
+    </tr>
+    <tr>
+      <td class="num">30</td>
+      <td><strong>Алишер</strong><br><small>Алишер 7280 1500 ккал Новый</small></td>
+      <td><span class="badge" style="background:#dc2626">5 дней до конца</span></td>
+      <td>1500 ккал</td>
+      <td>Навои 328А Ресторан Дареджани<br><small>Дом.: —</small></td>
+      <td class="meals-col"><span class="no-data">—</span></td>
+    </tr>
+    <tr>
+      <td class="num">31</td>
+      <td><strong>Татьяна</strong><br><small>Татьяна 8005/1200ккал Продление</small></td>
+      <td><span class="badge" style="background:#dc2626">5 дней до конца</span></td>
+      <td>1200 ккал</td>
+      <td>Коттеджный городок Хуторок 2-й переулок дом 14(адрес 2ГИС) 1-я,14(Яндекс)|0;0|3229<br><small>Дом.: 14</small></td>
+      <td class="meals-col"><span class="no-data">—</span></td>
+    </tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── ЛИСТ КОМПЛЕКТОВКИ ── -->
+  <div id="komplek" class="section">
+    <p class="section-desc">Блюда по клиентам для производства. Только клиенты со стадией «Актив Блюда».</p>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Лист комплектовки для ГП</span>
+        <span class="card-count">3 клиентов</span>
+      </div>
+      <table>
+        <thead><tr>
+          <th>#</th><th>Клиент</th><th>Калории</th><th>Адрес</th><th>Блюда</th>
+        </tr></thead>
+        <tbody>
+    <tr>
+      <td class="num">1</td>
+      <td><strong>Рустам Олив</strong></td>
+      <td>1200 ккал</td>
+      <td>Навои 37, блок 10, 3 этаж, кв 332<br><small>Дом.: 332</small></td>
+      <td class="meals-col"><div class="date-label">17 мая</div><div class="dish-row"><span class="mtp завтрак">Завтрак</span><span class="dish-name">00376 Каша овсяная с фруктами</span></div><div class="dish-row"><span class="mtp обед">Обед</span><span class="dish-name">00478 Куриная грудка с чечевицей</span></div><div class="dish-row"><span class="mtp обед">Обед</span><span class="dish-name">46945 Паста с креветками</span></div><div class="dish-row"><span class="mtp ужин">Ужин</span><span class="dish-name">19230 Лапша соба с курицей</span></div></td>
+    </tr>
+    <tr>
+      <td class="num">2</td>
+      <td><strong>Перизат Олив</strong></td>
+      <td>1800 ккал</td>
+      <td>Назарбаева 28а, 19, кв. 32, домофон: 32<br><small>Дом.: 32</small></td>
+      <td class="meals-col"><div class="date-label">17 мая</div><div class="dish-row"><span class="mtp завтрак">Завтрак</span><span class="dish-name">31095 Фит панкейки из кабачка с соусом дзадзики</span></div><div class="dish-row"><span class="mtp завтрак">Завтрак</span><span class="dish-name">00405 Кесадилья с яичным паштетом</span></div><div class="dish-row"><span class="mtp обед">Обед</span><span class="dish-name">19253 Харчо с насыщенным пряным бульоном</span></div><div class="dish-row"><span class="mtp обед">Обед</span><span class="dish-name">46945 Паста с креветками</span></div><div class="dish-row"><span class="mtp ужин">Ужин</span><span class="dish-name">00378 Куриное бедро с рагу из овощей</span></div></td>
+    </tr>
+    <tr>
+      <td class="num">3</td>
+      <td><strong>Андрей</strong></td>
+      <td>1800 ккал</td>
+      <td>Коктем-3, дом 24, кв.140|0;0|3305<br><small>Дом.: 140</small></td>
+      <td class="meals-col"><div class="date-label">15 мая</div><div class="dish-row"><span class="mtp завтрак">Завтрак</span><span class="dish-name">Скрембл с индейкой</span></div><div class="dish-row"><span class="mtp обед">Обед</span><span class="dish-name">Ростбиф с грибами</span></div><div class="dish-row"><span class="mtp обед">Обед</span><span class="dish-name">Нежная семга с овощами гриль</span></div><div class="dish-row"><span class="mtp ужин">Ужин</span><span class="dish-name">Поке с лососем</span></div></td>
+    </tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── МАРШРУТНЫЙ ЛИСТ ── -->
+  <div id="marshrut" class="section">
+    <p class="section-desc">Маршрут доставки. Отмечайте выполненные доставки.</p>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Маршрутный лист</span>
+        <span class="card-count">31 адресов</span>
+      </div>
+      <table>
+        <thead><tr>
+          <th>#</th><th>Клиент</th><th>Адрес</th><th>Домофон</th><th>Калории</th><th>✓</th><th>Комментарий</th>
+        </tr></thead>
+        <tbody>
+    <tr>
+      <td class="num">1</td>
+      <td><strong>Рустам Олив</strong></td>
+      <td>Навои 37, блок 10, 3 этаж, кв 332</td>
+      <td>332</td>
+      <td>1200 ккал</td>
+      <td><input type="checkbox" class="delivery-check"></td>
+      <td><input type="text" class="note-input" placeholder="Комментарий..."></td>
+    </tr>
+    <tr>
+      <td class="num">2</td>
+      <td><strong>Перизат Олив</strong></td>
+      <td>Назарбаева 28а, 19, кв. 32, домофон: 32</td>
+      <td>32</td>
+      <td>1800 ккал</td>
+      <td><input type="checkbox" class="delivery-check"></td>
+      <td><input type="text" class="note-input" placeholder="Комментарий..."></td>
+    </tr>
+    <tr>
+      <td class="num">3</td>
+      <td><strong>Андрей</strong></td>
+      <td>Коктем-3, дом 24, кв.140|0;0|3305</td>
+      <td>140</td>
+      <td>1800 ккал</td>
+      <td><input type="checkbox" class="delivery-check"></td>
+      <td><input type="text" class="note-input" placeholder="Комментарий..."></td>
+    </tr>
+    <tr>
+      <td class="num">4</td>
+      <td><strong>Кодар Айман</strong></td>
+      <td>Навои 70, квартира 1, этаж 2</td>
+      <td>1</td>
+      <td>1800 ккал</td>
+      <td><input type="checkbox" class="delivery-check"></td>
+      <td><input type="text" class="note-input" placeholder="Комментарий..."></td>
+    </tr>
+    <tr>
+      <td class="num">5</td>
+      <td><strong>Анна</strong></td>
+      <td>Айтеке би, 123/1-23, 7 этаж</td>
+      <td>23</td>
+      <td>1200 ккал</td>
+      <td><input type="checkbox" class="delivery-check"></td>
+      <td><input type="text" class="note-input" placeholder="Комментарий..."></td>
+    </tr>
+    <tr>
+      <td class="num">6</td>
+      <td><strong>Жанибек</strong></td>
+      <td>Абирова, 10</td>
+      <td>—</td>
+      <td>1800 ккал</td>
+      <td><input type="checkbox" class="delivery-check"></td>
+      <td><input type="text" class="note-input" placeholder="Комментарий..."></td>
+    </tr>
+    <tr>
+      <td class="num">7</td>
+      <td><strong>Зарема</strong></td>
+      <td>Жк Ботанический Сад д.9 |0;0|3139</td>
+      <td>6</td>
+      <td>1500 ккал</td>
+      <td><input type="checkbox" class="delivery-check"></td>
+      <td><input type="text" class="note-input" placeholder="Комментарий..."></td>
+    </tr>
+    <tr>
+      <td class="num">8</td>
+      <td><strong>Оксана</strong></td>
+      <td>Ул. Казыбек би 183, подъезд 4, этаж 3, Кв 44</td>
+      <td>—</td>
+      <td>1200 ккал</td>
+      <td><input type="checkbox" class="delivery-check"></td>
+      <td><input type="text" class="note-input" placeholder="Комментарий..."></td>
+    </tr>
+    <tr>
+      <td class="num">9</td>
+      <td><strong>Карина UGC</strong></td>
+      <td>Жарокова 39, кв 88 5 подьезд, 5 этаж</td>
+      <td>88</td>
+      <td>1500 ккал</td>
+      <td><input type="checkbox" class="delivery-check"></td>
+      <td><input type="text" class="note-input" placeholder="Комментарий..."></td>
+    </tr>
+    <tr>
+      <td class="num">10</td>
+      <td><strong>Антон</strong></td>
+      <td>Санаторная 22 ЖК Байсал 5й этаж|0;0|3153</td>
+      <td>14</td>
+      <td>1800 ккал</td>
+      <td><input type="checkbox" class="delivery-check"></td>
+      <td><input type="text" class="note-input" placeholder="Комментарий..."></td>
+    </tr>
+    <tr>
+      <td class="num">11</td>
+      <td><strong>Куанышбек</strong></td>
+      <td>Проспект Абая, 109/11, корпус 18. квартира 26 (8 этаж)|0;0|3201</td>
+      <td>26</td>
+      <td>2500 ккал</td>
+      <td><input type="checkbox" class="delivery-check"></td>
+      <td><input type="text" class="note-input" placeholder="Комментарий..."></td>
+    </tr>
+    <tr>
+      <td class="num">12</td>
+      <td><strong>Малика</strong></td>
+      <td>Альфараби 41/6, блок 5, квартира 140</td>
+      <td>140</td>
+      <td>1200 ккал</td>
+      <td><input type="checkbox" class="delivery-check"></td>
+      <td><input type="text" class="note-input" placeholder="Комментарий..."></td>
+    </tr>
+    <tr>
+      <td class="num">13</td>
+      <td><strong>Анастасия</strong></td>
+      <td>Жилой комплекс Ботанический сад дом 6 квартира 5, Алматы, Казахстан|0;0|3215</td>
+      <td>5</td>
+      <td>1800 ккал</td>
+      <td><input type="checkbox" class="delivery-check"></td>
+      <td><input type="text" class="note-input" placeholder="Комментарий..."></td>
+    </tr>
+    <tr>
+      <td class="num">14</td>
+      <td><strong>Виктор</strong></td>
+      <td>улица Бальзака, 8 лит В, 2 этаж, квартира 198</td>
+      <td>198</td>
+      <td>1800 ккал</td>
+      <td><input type="checkbox" class="delivery-check"></td>
+      <td><input type="text" class="note-input" placeholder="Комментарий..."></td>
+    </tr>
+    <tr>
+      <td class="num">15</td>
+      <td><strong>Искандер</strong></td>
+      <td>ЖК Легенда, Абая 109/8, Корпус 12, Квартира 46, 8 этаж|0;0|3273</td>
+      <td>46</td>
+      <td>1800 ккал</td>
+      <td><input type="checkbox" class="delivery-check"></td>
+      <td><input type="text" class="note-input" placeholder="Комментарий..."></td>
+    </tr>
+    <tr>
+      <td class="num">16</td>
+      <td><strong>Сабира</strong></td>
+      <td>ул Ауэзова 8, кв 72, 7 подъезд, 3 этаж|0;0|3183</td>
+      <td>72</td>
+      <td>1500 ккал</td>
+      <td><input type="checkbox" class="delivery-check"></td>
+      <td><input type="text" class="note-input" placeholder="Комментарий..."></td>
+    </tr>
+    <tr>
+      <td class="num">17</td>
+      <td><strong>Елена</strong></td>
+      <td>Аль Фараби 38, офис, оставлять на ресепшен|0;0|3265</td>
+      <td>Офис</td>
+      <td>1500 ккал</td>
+      <td><input type="checkbox" class="delivery-check"></td>
+      <td><input type="text" class="note-input" placeholder="Комментарий..."></td>
+    </tr>
+    <tr>
+      <td class="num">18</td>
+      <td><strong>Карина К</strong></td>
+      <td>Микрорайон Алмагуль, дом 19, квартира 26, подъезд 2, этаж 2</td>
+      <td>26</td>
+      <td>1500 ккал</td>
+      <td><input type="checkbox" class="delivery-check"></td>
+      <td><input type="text" class="note-input" placeholder="Комментарий..."></td>
+    </tr>
+    <tr>
+      <td class="num">19</td>
+      <td><strong>Рабига</strong></td>
+      <td>Баганашыл, улица Тан, дом 154 частный дом, необходимо позвонить, чтобы вышли встретить</td>
+      <td>Частный дом</td>
+      <td>1200 ккал</td>
+      <td><input type="checkbox" class="delivery-check"></td>
+      <td><input type="text" class="note-input" placeholder="Комментарий..."></td>
+    </tr>
+    <tr>
+      <td class="num">20</td>
+      <td><strong>Токгоз</strong></td>
+      <td>Тимирязева 32а, кВ 66</td>
+      <td>66</td>
+      <td>2500 ккал</td>
+      <td><input type="checkbox" class="delivery-check"></td>
+      <td><input type="text" class="note-input" placeholder="Комментарий..."></td>
+    </tr>
+    <tr>
+      <td class="num">21</td>
+      <td><strong>Татьяна</strong></td>
+      <td>Ади Шарипова 145, корпус 3, 9 этаж, Алматы, Казахстан|0;0|2667</td>
+      <td>354</td>
+      <td>1200 ккал</td>
+      <td><input type="checkbox" class="delivery-check"></td>
+      <td><input type="text" class="note-input" placeholder="Комментарий..."></td>
+    </tr>
+    <tr>
+      <td class="num">22</td>
+      <td><strong>Дмитрий</strong></td>
+      <td>Абая 130/3, 10 этаж</td>
+      <td>32</td>
+      <td>1500 ккал</td>
+      <td><input type="checkbox" class="delivery-check"></td>
+      <td><input type="text" class="note-input" placeholder="Комментарий..."></td>
+    </tr>
+    <tr>
+      <td class="num">23</td>
+      <td><strong>Бейсембиева Алтынай</strong></td>
+      <td>жамакаева 22/2</td>
+      <td>—</td>
+      <td>1500 ккал</td>
+      <td><input type="checkbox" class="delivery-check"></td>
+      <td><input type="text" class="note-input" placeholder="Комментарий..."></td>
+    </tr>
+    <tr>
+      <td class="num">24</td>
+      <td><strong>Константин</strong></td>
+      <td>Микрорайон Нурлытау , улица Макана Жумагулова , дом 46</td>
+      <td>46</td>
+      <td> ккал</td>
+      <td><input type="checkbox" class="delivery-check"></td>
+      <td><input type="text" class="note-input" placeholder="Комментарий..."></td>
+    </tr>
+    <tr>
+      <td class="num">25</td>
+      <td><strong>Айнур</strong></td>
+      <td>пр. Аль-фараби, 21/3, Блок, 3, кв. 223, эьаж 9, домофон на входе 3#223, домофон в подъезде - 223</td>
+      <td>домофон на входе 3#223, домофон в подъезде - 223</td>
+      <td>1200 ккал</td>
+      <td><input type="checkbox" class="delivery-check"></td>
+      <td><input type="text" class="note-input" placeholder="Комментарий..."></td>
+    </tr>
+    <tr>
+      <td class="num">26</td>
+      <td><strong>Ольга</strong></td>
+      <td>Достык 36 кв 41. Подъезд 3, этаж 3</td>
+      <td>41</td>
+      <td>1200 ккал</td>
+      <td><input type="checkbox" class="delivery-check"></td>
+      <td><input type="text" class="note-input" placeholder="Комментарий..."></td>
+    </tr>
+    <tr>
+      <td class="num">27</td>
+      <td><strong>Нурия Т</strong></td>
+      <td>, Мауленова д 124 кв 45 подъезд 3 этаж 4, Алматы, Казахстан (0, 0)|0;0|2747</td>
+      <td>45</td>
+      <td>1200 ккал</td>
+      <td><input type="checkbox" class="delivery-check"></td>
+      <td><input type="text" class="note-input" placeholder="Комментарий..."></td>
+    </tr>
+    <tr>
+      <td class="num">28</td>
+      <td><strong>Нурия Т</strong></td>
+      <td>, Мауленова д 124 кв 45 подъезд 3 этаж 4, Алматы, Казахстан (0, 0)|0;0|2749</td>
+      <td>45</td>
+      <td>1200 ккал</td>
+      <td><input type="checkbox" class="delivery-check"></td>
+      <td><input type="text" class="note-input" placeholder="Комментарий..."></td>
+    </tr>
+    <tr>
+      <td class="num">29</td>
+      <td><strong>Ирина</strong></td>
+      <td>Восточная улица, 15</td>
+      <td>—</td>
+      <td>1500 ккал</td>
+      <td><input type="checkbox" class="delivery-check"></td>
+      <td><input type="text" class="note-input" placeholder="Комментарий..."></td>
+    </tr>
+    <tr>
+      <td class="num">30</td>
+      <td><strong>Алишер</strong></td>
+      <td>Навои 328А Ресторан Дареджани</td>
+      <td>—</td>
+      <td>1500 ккал</td>
+      <td><input type="checkbox" class="delivery-check"></td>
+      <td><input type="text" class="note-input" placeholder="Комментарий..."></td>
+    </tr>
+    <tr>
+      <td class="num">31</td>
+      <td><strong>Татьяна</strong></td>
+      <td>Коттеджный городок Хуторок 2-й переулок дом 14(адрес 2ГИС) 1-я,14(Яндекс)|0;0|3229</td>
+      <td>14</td>
+      <td>1200 ккал</td>
+      <td><input type="checkbox" class="delivery-check"></td>
+      <td><input type="text" class="note-input" placeholder="Комментарий..."></td>
+    </tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── СПИСОК РЕАЛИЗАЦИИ ── -->
+  <div id="realizaciya" class="section">
+    <p class="section-desc">Финансовый список активных подписок.</p>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Список реализации</span>
+        <span class="card-count">31 позиций</span>
+      </div>
+      <table>
+        <thead><tr>
+          <th>#</th><th>Клиент</th><th>Программа</th><th>Цель</th><th>Начало</th><th>Конец</th><th>Стадия</th><th>Сумма</th>
+        </tr></thead>
+        <tbody>
+          
+    <tr>
+      <td class="num">1</td>
+      <td><strong>Рустам Олив</strong></td>
+      <td>1200 ккал</td>
+      <td>Похудение</td>
+      <td>2026-05-14</td>
+      <td>2026-05-21</td>
+      <td><span class="badge" style="background:#16a34a">Актив Блюда</span></td>
+      <td class="price">7,326 ₸</td>
+    </tr>
+    <tr>
+      <td class="num">2</td>
+      <td><strong>Перизат Олив</strong></td>
+      <td>1800 ккал</td>
+      <td>Похудение</td>
+      <td>2026-05-14</td>
+      <td>2026-05-21</td>
+      <td><span class="badge" style="background:#16a34a">Актив Блюда</span></td>
+      <td class="price">8,369 ₸</td>
+    </tr>
+    <tr>
+      <td class="num">3</td>
+      <td><strong>Андрей</strong></td>
+      <td>1800 ккал</td>
+      <td>Похудение</td>
+      <td>2026-05-13</td>
+      <td>2026-05-20</td>
+      <td><span class="badge" style="background:#16a34a">Актив Блюда</span></td>
+      <td class="price">12,200 ₸</td>
+    </tr>
+    <tr>
+      <td class="num">4</td>
+      <td><strong>Кодар Айман</strong></td>
+      <td>1800 ккал</td>
+      <td>питание, снижение</td>
+      <td>2026-04-07</td>
+      <td>2026-04-14</td>
+      <td><span class="badge" style="background:#2563eb">Актив</span></td>
+      <td class="price">354,000 ₸</td>
+    </tr>
+    <tr>
+      <td class="num">5</td>
+      <td><strong>Анна</strong></td>
+      <td>1200 ккал</td>
+      <td>снижение веса</td>
+      <td>2026-05-01</td>
+      <td>2026-05-08</td>
+      <td><span class="badge" style="background:#2563eb">Актив</span></td>
+      <td class="price">140,000 ₸</td>
+    </tr>
+    <tr>
+      <td class="num">6</td>
+      <td><strong>Жанибек</strong></td>
+      <td>1800 ккал</td>
+      <td>поддержание в тонусе</td>
+      <td>2026-05-03</td>
+      <td>2026-05-10</td>
+      <td><span class="badge" style="background:#2563eb">Актив</span></td>
+      <td class="price">168,000 ₸</td>
+    </tr>
+    <tr>
+      <td class="num">7</td>
+      <td><strong>Зарема</strong></td>
+      <td>1500 ккал</td>
+      <td>питание, снижение</td>
+      <td>2026-04-02</td>
+      <td>2026-05-03</td>
+      <td><span class="badge" style="background:#2563eb">Актив</span></td>
+      <td class="price">330,000 ₸</td>
+    </tr>
+    <tr>
+      <td class="num">8</td>
+      <td><strong>Оксана</strong></td>
+      <td>1200 ккал</td>
+      <td>Похудение</td>
+      <td>2026-03-02</td>
+      <td>2026-03-19</td>
+      <td><span class="badge" style="background:#2563eb">Актив</span></td>
+      <td class="price">140,000 ₸</td>
+    </tr>
+    <tr>
+      <td class="num">9</td>
+      <td><strong>Карина UGC</strong></td>
+      <td>1500 ккал</td>
+      <td>Реклама </td>
+      <td>2026-05-13</td>
+      <td>2026-05-20</td>
+      <td><span class="badge" style="background:#2563eb">Актив</span></td>
+      <td class="price">0 ₸</td>
+    </tr>
+    <tr>
+      <td class="num">10</td>
+      <td><strong>Антон</strong></td>
+      <td>1800 ккал</td>
+      <td>поддержание формы</td>
+      <td>2026-05-03</td>
+      <td>2026-05-10</td>
+      <td><span class="badge" style="background:#2563eb">Актив</span></td>
+      <td class="price">176,500 ₸</td>
+    </tr>
+    <tr>
+      <td class="num">11</td>
+      <td><strong>Куанышбек</strong></td>
+      <td>2500 ккал</td>
+      <td>набор массы</td>
+      <td>2026-05-04</td>
+      <td>2026-05-11</td>
+      <td><span class="badge" style="background:#2563eb">Актив</span></td>
+      <td class="price">196,000 ₸</td>
+    </tr>
+    <tr>
+      <td class="num">12</td>
+      <td><strong>Малика</strong></td>
+      <td>1200 ккал</td>
+      <td>снижение веса</td>
+      <td>2026-05-09</td>
+      <td>2026-05-16</td>
+      <td><span class="badge" style="background:#2563eb">Актив</span></td>
+      <td class="price">140,000 ₸</td>
+    </tr>
+    <tr>
+      <td class="num">13</td>
+      <td><strong>Анастасия</strong></td>
+      <td>1800 ккал</td>
+      <td>питание, снижение</td>
+      <td>2026-03-26</td>
+      <td>2026-04-23</td>
+      <td><span class="badge" style="background:#2563eb">Актив</span></td>
+      <td class="price">168,000 ₸</td>
+    </tr>
+    <tr>
+      <td class="num">14</td>
+      <td><strong>Виктор</strong></td>
+      <td>1800 ккал</td>
+      <td>снижение веса</td>
+      <td>2026-05-11</td>
+      <td>2026-05-18</td>
+      <td><span class="badge" style="background:#2563eb">Актив</span></td>
+      <td class="price">168,000 ₸</td>
+    </tr>
+    <tr>
+      <td class="num">15</td>
+      <td><strong>Искандер</strong></td>
+      <td>1800 ккал</td>
+      <td>поддержание формы</td>
+      <td>2026-05-04</td>
+      <td>2026-05-11</td>
+      <td><span class="badge" style="background:#2563eb">Актив</span></td>
+      <td class="price">168,000 ₸</td>
+    </tr>
+    <tr>
+      <td class="num">16</td>
+      <td><strong>Сабира</strong></td>
+      <td>1500 ккал</td>
+      <td>Похудение</td>
+      <td>2026-05-01</td>
+      <td>2026-05-08</td>
+      <td><span class="badge" style="background:#2563eb">Актив</span></td>
+      <td class="price">55,000 ₸</td>
+    </tr>
+    <tr>
+      <td class="num">17</td>
+      <td><strong>Елена</strong></td>
+      <td>1500 ккал</td>
+      <td>Попробывать </td>
+      <td>2026-04-28</td>
+      <td>2026-05-01</td>
+      <td><span class="badge" style="background:#2563eb">Актив</span></td>
+      <td class="price">58,500 ₸</td>
+    </tr>
+    <tr>
+      <td class="num">18</td>
+      <td><strong>Карина К</strong></td>
+      <td>1500 ккал</td>
+      <td>Похудение</td>
+      <td>2026-05-13</td>
+      <td>2026-05-20</td>
+      <td><span class="badge" style="background:#2563eb">Актив</span></td>
+      <td class="price">55,000 ₸</td>
+    </tr>
+    <tr>
+      <td class="num">19</td>
+      <td><strong>Рабига</strong></td>
+      <td>1200 ккал</td>
+      <td>Похудение</td>
+      <td>2026-05-13</td>
+      <td>2026-05-20</td>
+      <td><span class="badge" style="background:#d97706">Актив <5 дней</span></td>
+      <td class="price">0 ₸</td>
+    </tr>
+    <tr>
+      <td class="num">20</td>
+      <td><strong>Токгоз</strong></td>
+      <td>2500 ккал</td>
+      <td>Попробовать </td>
+      <td>2026-05-14</td>
+      <td>2026-05-21</td>
+      <td><span class="badge" style="background:#d97706">Актив <5 дней</span></td>
+      <td class="price">0 ₸</td>
+    </tr>
+    <tr>
+      <td class="num">21</td>
+      <td><strong>Татьяна</strong></td>
+      <td>1200 ккал</td>
+      <td>питание, снижение</td>
+      <td>2026-03-31</td>
+      <td>2026-04-07</td>
+      <td><span class="badge" style="background:#dc2626">5 дней до конца</span></td>
+      <td class="price">300,000 ₸</td>
+    </tr>
+    <tr>
+      <td class="num">22</td>
+      <td><strong>Дмитрий</strong></td>
+      <td>1500 ккал</td>
+      <td>питание, снижение</td>
+      <td>2026-04-28</td>
+      <td>2026-05-05</td>
+      <td><span class="badge" style="background:#dc2626">5 дней до конца</span></td>
+      <td class="price">154,000 ₸</td>
+    </tr>
+    <tr>
+      <td class="num">23</td>
+      <td><strong>Бейсембиева Алтынай</strong></td>
+      <td>1500 ккал</td>
+      <td>питание, снижение</td>
+      <td>2026-04-28</td>
+      <td>2026-05-05</td>
+      <td><span class="badge" style="background:#dc2626">5 дней до конца</span></td>
+      <td class="price">162,500 ₸</td>
+    </tr>
+    <tr>
+      <td class="num">24</td>
+      <td><strong>Константин</strong></td>
+      <td> ккал</td>
+      <td>Питание</td>
+      <td>2026-05-01</td>
+      <td>2026-05-08</td>
+      <td><span class="badge" style="background:#dc2626">5 дней до конца</span></td>
+      <td class="price">154,000 ₸</td>
+    </tr>
+    <tr>
+      <td class="num">25</td>
+      <td><strong>Айнур</strong></td>
+      <td>1200 ккал</td>
+      <td>Похудение</td>
+      <td>2026-05-09</td>
+      <td>2026-05-16</td>
+      <td><span class="badge" style="background:#dc2626">5 дней до конца</span></td>
+      <td class="price">50,000 ₸</td>
+    </tr>
+    <tr>
+      <td class="num">26</td>
+      <td><strong>Ольга</strong></td>
+      <td>1200 ккал</td>
+      <td>Попробовать </td>
+      <td>2026-03-26</td>
+      <td>2026-05-18</td>
+      <td><span class="badge" style="background:#dc2626">5 дней до конца</span></td>
+      <td class="price">50,000 ₸</td>
+    </tr>
+    <tr>
+      <td class="num">27</td>
+      <td><strong>Нурия Т</strong></td>
+      <td>1200 ккал</td>
+      <td>—</td>
+      <td>2026-02-24</td>
+      <td>2026-03-19</td>
+      <td><span class="badge" style="background:#dc2626">5 дней до конца</span></td>
+      <td class="price">140,000 ₸</td>
+    </tr>
+    <tr>
+      <td class="num">28</td>
+      <td><strong>Нурия Т</strong></td>
+      <td>1200 ккал</td>
+      <td>—</td>
+      <td>2026-02-24</td>
+      <td>2026-03-19</td>
+      <td><span class="badge" style="background:#dc2626">5 дней до конца</span></td>
+      <td class="price">140,000 ₸</td>
+    </tr>
+    <tr>
+      <td class="num">29</td>
+      <td><strong>Ирина</strong></td>
+      <td>1500 ккал</td>
+      <td>Попробовать </td>
+      <td>2026-05-07</td>
+      <td>2026-05-14</td>
+      <td><span class="badge" style="background:#dc2626">5 дней до конца</span></td>
+      <td class="price">62,000 ₸</td>
+    </tr>
+    <tr>
+      <td class="num">30</td>
+      <td><strong>Алишер</strong></td>
+      <td>1500 ккал</td>
+      <td>Попробовать </td>
+      <td>2026-05-10</td>
+      <td>2026-05-17</td>
+      <td><span class="badge" style="background:#dc2626">5 дней до конца</span></td>
+      <td class="price">56,500 ₸</td>
+    </tr>
+    <tr>
+      <td class="num">31</td>
+      <td><strong>Татьяна</strong></td>
+      <td>1200 ккал</td>
+      <td>Попробовать </td>
+      <td>2026-04-29</td>
+      <td>2026-05-06</td>
+      <td><span class="badge" style="background:#dc2626">5 дней до конца</span></td>
+      <td class="price">53,500 ₸</td>
+    </tr>
+          <tr class="total-row">
+            <td colspan="7" style="text-align:right">Итого:</td>
+            <td class="price">3,667,395 ₸</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── СПИСОК НАКЛЕЕК ── -->
+  <div id="nakleyki" class="section">
+    <p class="section-desc">По одной наклейке на каждого клиента со списком всех его блюд.</p>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Список наклеек</span>
+        <button onclick="window.print()" style="padding:5px 12px;border:1px solid var(--border);border-radius:7px;background:#fff;cursor:pointer;font-size:12px;font-weight:600">🖨️ Печать</button>
+      </div>
+      <div class="stickers-grid">
+    <div class="sticker">
+      <div class="s-header">
+        <span class="s-name">Рустам Олив</span>
+        <span class="s-kcal">1200 ккал</span>
+      </div>
+      <div class="s-addr">Навои 37, блок 10, 3 этаж, кв 332 | Дом.: 332</div>
+      <div class="s-meals"><div class="s-date">17 мая</div><div class="s-dish"><span class="s-mtp завтрак">Завтрак</span>00376 Каша овсяная с фруктами</div><div class="s-dish"><span class="s-mtp обед">Обед</span>00478 Куриная грудка с чечевицей</div><div class="s-dish"><span class="s-mtp обед">Обед</span>46945 Паста с креветками</div><div class="s-dish"><span class="s-mtp ужин">Ужин</span>19230 Лапша соба с курицей</div></div>
+      <div class="s-footer"><span class="badge" style="background:#16a34a">Актив Блюда</span></div>
+    </div>
+    <div class="sticker">
+      <div class="s-header">
+        <span class="s-name">Перизат Олив</span>
+        <span class="s-kcal">1800 ккал</span>
+      </div>
+      <div class="s-addr">Назарбаева 28а, 19, кв. 32, домофон: 32 | Дом.: 32</div>
+      <div class="s-meals"><div class="s-date">17 мая</div><div class="s-dish"><span class="s-mtp завтрак">Завтрак</span>31095 Фит панкейки из кабачка с соусом дзадзики</div><div class="s-dish"><span class="s-mtp завтрак">Завтрак</span>00405 Кесадилья с яичным паштетом</div><div class="s-dish"><span class="s-mtp обед">Обед</span>19253 Харчо с насыщенным пряным бульоном</div><div class="s-dish"><span class="s-mtp обед">Обед</span>46945 Паста с креветками</div><div class="s-dish"><span class="s-mtp ужин">Ужин</span>00378 Куриное бедро с рагу из овощей</div></div>
+      <div class="s-footer"><span class="badge" style="background:#16a34a">Актив Блюда</span></div>
+    </div>
+    <div class="sticker">
+      <div class="s-header">
+        <span class="s-name">Андрей</span>
+        <span class="s-kcal">1800 ккал</span>
+      </div>
+      <div class="s-addr">Коктем-3, дом 24, кв.140|0;0|3305 | Дом.: 140</div>
+      <div class="s-meals"><div class="s-date">15 мая</div><div class="s-dish"><span class="s-mtp завтрак">Завтрак</span>Скрембл с индейкой</div><div class="s-dish"><span class="s-mtp обед">Обед</span>Ростбиф с грибами</div><div class="s-dish"><span class="s-mtp обед">Обед</span>Нежная семга с овощами гриль</div><div class="s-dish"><span class="s-mtp ужин">Ужин</span>Поке с лососем</div></div>
+      <div class="s-footer"><span class="badge" style="background:#16a34a">Актив Блюда</span></div>
+    </div>
+    <div class="sticker">
+      <div class="s-header">
+        <span class="s-name">Кодар Айман</span>
+        <span class="s-kcal">1800 ккал</span>
+      </div>
+      <div class="s-addr">Навои 70, квартира 1, этаж 2 | Дом.: 1</div>
+      <div class="s-meals"><div class="s-no-meals">Блюда не указаны</div></div>
+      <div class="s-footer"><span class="badge" style="background:#2563eb">Актив</span></div>
+    </div>
+    <div class="sticker">
+      <div class="s-header">
+        <span class="s-name">Анна</span>
+        <span class="s-kcal">1200 ккал</span>
+      </div>
+      <div class="s-addr">Айтеке би, 123/1-23, 7 этаж | Дом.: 23</div>
+      <div class="s-meals"><div class="s-no-meals">Блюда не указаны</div></div>
+      <div class="s-footer"><span class="badge" style="background:#2563eb">Актив</span></div>
+    </div>
+    <div class="sticker">
+      <div class="s-header">
+        <span class="s-name">Жанибек</span>
+        <span class="s-kcal">1800 ккал</span>
+      </div>
+      <div class="s-addr">Абирова, 10</div>
+      <div class="s-meals"><div class="s-no-meals">Блюда не указаны</div></div>
+      <div class="s-footer"><span class="badge" style="background:#2563eb">Актив</span></div>
+    </div>
+    <div class="sticker">
+      <div class="s-header">
+        <span class="s-name">Зарема</span>
+        <span class="s-kcal">1500 ккал</span>
+      </div>
+      <div class="s-addr">Жк Ботанический Сад д.9 |0;0|3139 | Дом.: 6</div>
+      <div class="s-meals"><div class="s-no-meals">Блюда не указаны</div></div>
+      <div class="s-footer"><span class="badge" style="background:#2563eb">Актив</span></div>
+    </div>
+    <div class="sticker">
+      <div class="s-header">
+        <span class="s-name">Оксана</span>
+        <span class="s-kcal">1200 ккал</span>
+      </div>
+      <div class="s-addr">Ул. Казыбек би 183, подъезд 4, этаж 3, Кв 44</div>
+      <div class="s-meals"><div class="s-no-meals">Блюда не указаны</div></div>
+      <div class="s-footer"><span class="badge" style="background:#2563eb">Актив</span></div>
+    </div>
+    <div class="sticker">
+      <div class="s-header">
+        <span class="s-name">Карина UGC</span>
+        <span class="s-kcal">1500 ккал</span>
+      </div>
+      <div class="s-addr">Жарокова 39, кв 88 5 подьезд, 5 этаж | Дом.: 88</div>
+      <div class="s-meals"><div class="s-no-meals">Блюда не указаны</div></div>
+      <div class="s-footer"><span class="badge" style="background:#2563eb">Актив</span></div>
+    </div>
+    <div class="sticker">
+      <div class="s-header">
+        <span class="s-name">Антон</span>
+        <span class="s-kcal">1800 ккал</span>
+      </div>
+      <div class="s-addr">Санаторная 22 ЖК Байсал 5й этаж|0;0|3153 | Дом.: 14</div>
+      <div class="s-meals"><div class="s-no-meals">Блюда не указаны</div></div>
+      <div class="s-footer"><span class="badge" style="background:#2563eb">Актив</span></div>
+    </div>
+    <div class="sticker">
+      <div class="s-header">
+        <span class="s-name">Куанышбек</span>
+        <span class="s-kcal">2500 ккал</span>
+      </div>
+      <div class="s-addr">Проспект Абая, 109/11, корпус 18. квартира 26 (8 этаж)|0;0|3201 | Дом.: 26</div>
+      <div class="s-meals"><div class="s-no-meals">Блюда не указаны</div></div>
+      <div class="s-footer"><span class="badge" style="background:#2563eb">Актив</span></div>
+    </div>
+    <div class="sticker">
+      <div class="s-header">
+        <span class="s-name">Малика</span>
+        <span class="s-kcal">1200 ккал</span>
+      </div>
+      <div class="s-addr">Альфараби 41/6, блок 5, квартира 140 | Дом.: 140</div>
+      <div class="s-meals"><div class="s-no-meals">Блюда не указаны</div></div>
+      <div class="s-footer"><span class="badge" style="background:#2563eb">Актив</span></div>
+    </div>
+    <div class="sticker">
+      <div class="s-header">
+        <span class="s-name">Анастасия</span>
+        <span class="s-kcal">1800 ккал</span>
+      </div>
+      <div class="s-addr">Жилой комплекс Ботанический сад дом 6 квартира 5, Алматы, Казахстан|0;0|3215 | Дом.: 5</div>
+      <div class="s-meals"><div class="s-no-meals">Блюда не указаны</div></div>
+      <div class="s-footer"><span class="badge" style="background:#2563eb">Актив</span></div>
+    </div>
+    <div class="sticker">
+      <div class="s-header">
+        <span class="s-name">Виктор</span>
+        <span class="s-kcal">1800 ккал</span>
+      </div>
+      <div class="s-addr">улица Бальзака, 8 лит В, 2 этаж, квартира 198 | Дом.: 198</div>
+      <div class="s-meals"><div class="s-no-meals">Блюда не указаны</div></div>
+      <div class="s-footer"><span class="badge" style="background:#2563eb">Актив</span></div>
+    </div>
+    <div class="sticker">
+      <div class="s-header">
+        <span class="s-name">Искандер</span>
+        <span class="s-kcal">1800 ккал</span>
+      </div>
+      <div class="s-addr">ЖК Легенда, Абая 109/8, Корпус 12, Квартира 46, 8 этаж|0;0|3273 | Дом.: 46</div>
+      <div class="s-meals"><div class="s-no-meals">Блюда не указаны</div></div>
+      <div class="s-footer"><span class="badge" style="background:#2563eb">Актив</span></div>
+    </div>
+    <div class="sticker">
+      <div class="s-header">
+        <span class="s-name">Сабира</span>
+        <span class="s-kcal">1500 ккал</span>
+      </div>
+      <div class="s-addr">ул Ауэзова 8, кв 72, 7 подъезд, 3 этаж|0;0|3183 | Дом.: 72</div>
+      <div class="s-meals"><div class="s-no-meals">Блюда не указаны</div></div>
+      <div class="s-footer"><span class="badge" style="background:#2563eb">Актив</span></div>
+    </div>
+    <div class="sticker">
+      <div class="s-header">
+        <span class="s-name">Елена</span>
+        <span class="s-kcal">1500 ккал</span>
+      </div>
+      <div class="s-addr">Аль Фараби 38, офис, оставлять на ресепшен|0;0|3265 | Дом.: Офис</div>
+      <div class="s-meals"><div class="s-no-meals">Блюда не указаны</div></div>
+      <div class="s-footer"><span class="badge" style="background:#2563eb">Актив</span></div>
+    </div>
+    <div class="sticker">
+      <div class="s-header">
+        <span class="s-name">Карина К</span>
+        <span class="s-kcal">1500 ккал</span>
+      </div>
+      <div class="s-addr">Микрорайон Алмагуль, дом 19, квартира 26, подъезд 2, этаж 2 | Дом.: 26</div>
+      <div class="s-meals"><div class="s-no-meals">Блюда не указаны</div></div>
+      <div class="s-footer"><span class="badge" style="background:#2563eb">Актив</span></div>
+    </div>
+    <div class="sticker">
+      <div class="s-header">
+        <span class="s-name">Рабига</span>
+        <span class="s-kcal">1200 ккал</span>
+      </div>
+      <div class="s-addr">Баганашыл, улица Тан, дом 154 частный дом, необходимо позвонить, чтобы вышли встретить | Дом.: Частный дом</div>
+      <div class="s-meals"><div class="s-no-meals">Блюда не указаны</div></div>
+      <div class="s-footer"><span class="badge" style="background:#d97706">Актив <5 дней</span></div>
+    </div>
+    <div class="sticker">
+      <div class="s-header">
+        <span class="s-name">Токгоз</span>
+        <span class="s-kcal">2500 ккал</span>
+      </div>
+      <div class="s-addr">Тимирязева 32а, кВ 66 | Дом.: 66</div>
+      <div class="s-meals"><div class="s-no-meals">Блюда не указаны</div></div>
+      <div class="s-footer"><span class="badge" style="background:#d97706">Актив <5 дней</span></div>
+    </div>
+    <div class="sticker">
+      <div class="s-header">
+        <span class="s-name">Татьяна</span>
+        <span class="s-kcal">1200 ккал</span>
+      </div>
+      <div class="s-addr">Ади Шарипова 145, корпус 3, 9 этаж, Алматы, Казахстан|0;0|2667 | Дом.: 354</div>
+      <div class="s-meals"><div class="s-no-meals">Блюда не указаны</div></div>
+      <div class="s-footer"><span class="badge" style="background:#dc2626">5 дней до конца</span></div>
+    </div>
+    <div class="sticker">
+      <div class="s-header">
+        <span class="s-name">Дмитрий</span>
+        <span class="s-kcal">1500 ккал</span>
+      </div>
+      <div class="s-addr">Абая 130/3, 10 этаж | Дом.: 32</div>
+      <div class="s-meals"><div class="s-no-meals">Блюда не указаны</div></div>
+      <div class="s-footer"><span class="badge" style="background:#dc2626">5 дней до конца</span></div>
+    </div>
+    <div class="sticker">
+      <div class="s-header">
+        <span class="s-name">Бейсембиева Алтынай</span>
+        <span class="s-kcal">1500 ккал</span>
+      </div>
+      <div class="s-addr">жамакаева 22/2</div>
+      <div class="s-meals"><div class="s-no-meals">Блюда не указаны</div></div>
+      <div class="s-footer"><span class="badge" style="background:#dc2626">5 дней до конца</span></div>
+    </div>
+    <div class="sticker">
+      <div class="s-header">
+        <span class="s-name">Константин</span>
+        <span class="s-kcal"> ккал</span>
+      </div>
+      <div class="s-addr">Микрорайон Нурлытау , улица Макана Жумагулова , дом 46 | Дом.: 46</div>
+      <div class="s-meals"><div class="s-no-meals">Блюда не указаны</div></div>
+      <div class="s-footer"><span class="badge" style="background:#dc2626">5 дней до конца</span></div>
+    </div>
+    <div class="sticker">
+      <div class="s-header">
+        <span class="s-name">Айнур</span>
+        <span class="s-kcal">1200 ккал</span>
+      </div>
+      <div class="s-addr">пр. Аль-фараби, 21/3, Блок, 3, кв. 223, эьаж 9, домофон на входе 3#223, домофон в подъезде - 223 | Дом.: домофон на входе 3#223, домофон в подъезде - 223</div>
+      <div class="s-meals"><div class="s-no-meals">Блюда не указаны</div></div>
+      <div class="s-footer"><span class="badge" style="background:#dc2626">5 дней до конца</span></div>
+    </div>
+    <div class="sticker">
+      <div class="s-header">
+        <span class="s-name">Ольга</span>
+        <span class="s-kcal">1200 ккал</span>
+      </div>
+      <div class="s-addr">Достык 36 кв 41. Подъезд 3, этаж 3 | Дом.: 41</div>
+      <div class="s-meals"><div class="s-no-meals">Блюда не указаны</div></div>
+      <div class="s-footer"><span class="badge" style="background:#dc2626">5 дней до конца</span></div>
+    </div>
+    <div class="sticker">
+      <div class="s-header">
+        <span class="s-name">Нурия Т</span>
+        <span class="s-kcal">1200 ккал</span>
+      </div>
+      <div class="s-addr">, Мауленова д 124 кв 45 подъезд 3 этаж 4, Алматы, Казахстан (0, 0)|0;0|2747 | Дом.: 45</div>
+      <div class="s-meals"><div class="s-no-meals">Блюда не указаны</div></div>
+      <div class="s-footer"><span class="badge" style="background:#dc2626">5 дней до конца</span></div>
+    </div>
+    <div class="sticker">
+      <div class="s-header">
+        <span class="s-name">Нурия Т</span>
+        <span class="s-kcal">1200 ккал</span>
+      </div>
+      <div class="s-addr">, Мауленова д 124 кв 45 подъезд 3 этаж 4, Алматы, Казахстан (0, 0)|0;0|2749 | Дом.: 45</div>
+      <div class="s-meals"><div class="s-no-meals">Блюда не указаны</div></div>
+      <div class="s-footer"><span class="badge" style="background:#dc2626">5 дней до конца</span></div>
+    </div>
+    <div class="sticker">
+      <div class="s-header">
+        <span class="s-name">Ирина</span>
+        <span class="s-kcal">1500 ккал</span>
+      </div>
+      <div class="s-addr">Восточная улица, 15</div>
+      <div class="s-meals"><div class="s-no-meals">Блюда не указаны</div></div>
+      <div class="s-footer"><span class="badge" style="background:#dc2626">5 дней до конца</span></div>
+    </div>
+    <div class="sticker">
+      <div class="s-header">
+        <span class="s-name">Алишер</span>
+        <span class="s-kcal">1500 ккал</span>
+      </div>
+      <div class="s-addr">Навои 328А Ресторан Дареджани</div>
+      <div class="s-meals"><div class="s-no-meals">Блюда не указаны</div></div>
+      <div class="s-footer"><span class="badge" style="background:#dc2626">5 дней до конца</span></div>
+    </div>
+    <div class="sticker">
+      <div class="s-header">
+        <span class="s-name">Татьяна</span>
+        <span class="s-kcal">1200 ккал</span>
+      </div>
+      <div class="s-addr">Коттеджный городок Хуторок 2-й переулок дом 14(адрес 2ГИС) 1-я,14(Яндекс)|0;0|3229 | Дом.: 14</div>
+      <div class="s-meals"><div class="s-no-meals">Блюда не указаны</div></div>
+      <div class="s-footer"><span class="badge" style="background:#dc2626">5 дней до конца</span></div>
+    </div></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function showTab(id, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  el.classList.add('active');
+}
+</script>
+</body>
+</html>
